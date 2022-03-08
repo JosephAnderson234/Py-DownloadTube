@@ -5,6 +5,7 @@ import pafy
 import os
 from PIL import ImageTk, Image
 from tkinter import filedialog
+from tkinter import ttk
 from tkinter import messagebox
 import threading
 
@@ -21,12 +22,13 @@ class Descargar(Toplevel):
         self.imagen = ""
         self.video_pafy = pafy.new(self.url)
         self.name_of_video =  self.video_pafy.title      
-        self.video_best = self.video_pafy.getbest(preftype="mp4", ftypestrict=True)
+        self.video_list_org = self.video_pafy.streams
+        self.video_list = self.video_list_org
+        for i in range(len(self.video_list)):
+            self.video_list[i] = str(self.video_list[i])
         self.dif = 0
         self.master.configure(bg=varbg)     
         self.create_widgets()
-        self.main = threading.Thread(target=self.donwload_main)
-        self.main.start()
     
     def configure_characters(self):
         """Donwload the image fo miniatures"""
@@ -59,12 +61,16 @@ class Descargar(Toplevel):
         if self.recvd_2 == 100:
             messagebox.showinfo("Descarga Completa", "Descarga Completa")
             self.destroy()
-    
+            
     def donwload_main(self):
-        try:
-            self.video_best.download(filepath=self.path, quiet=True, callback=self.mycb)
-        except KeyboardInterrupt:
-            messagebox.showerror("Descarga Cancelada")
+        indice = int(self.video_list.index(self.list_q.get()))
+        #try
+        a = pafy.new(self.url)
+        stream = a.streams[indice]
+        stream.download(filepath=self.path, quiet=True, callback=self.mycb)
+        #except KeyboardInterrupt:
+        #    messagebox.showerror("Descarga Cancelada")
+        
     def create_widgets(self):
         self.characters_img = threading.Thread(target=self.configure_characters())
         self.characters_img.start()
@@ -81,10 +87,18 @@ class Descargar(Toplevel):
         self.description_label = Text(self, font=("Arial", 10), bg=vartercer, fg="red")
         self.description_label.config(state=DISABLED)
         self.description_label.place(x=265, y=66, width=216, height=133)
+        """List of videos's quality"""
+        self.title_lst = Label(self, text="Lista de Calidades", font=("Arial", 12), bg=varbg, fg="black", anchor=CENTER)
+        self.title_lst.place(x=29, y=242, width=114, height=23)
+        self.list_q = ttk.Combobox(self, state="readonly", values=self.video_list)
+        self.list_q.place(x=17, y=269, width=139, height=23)
         """Update the description of video"""
         self.up_description()
         self.progress = Progressbar(self, orient=HORIZONTAL, length=100, mode='determinate')
         self.progress.place(x=17, y=216, width=465, height=24)
+        """Button to download"""
+        self.btn_dw = Button(self, text="Descargar", command=self.donwload_main)
+        self.btn_dw.place(x=170, y=254, width=160, height=38)
 
 class App(Frame):
     def __init__(self, master=None):
@@ -178,7 +192,10 @@ window = Tk()
 window.geometry("500x350")
 window.configure(bg=varbg)
 window.resizable(False, False)
-window.iconbitmap("icon.ico")
+try: 
+    window.iconbitmap("icon.ico")
+except :
+    print("icon dont found")
 window.title("Free Download")
 app = App(window)
 app.mainloop()
